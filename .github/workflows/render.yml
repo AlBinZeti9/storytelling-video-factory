@@ -1,0 +1,31 @@
+name: Render Storytelling Video
+
+on:
+  repository_dispatch:
+    types: [render_story]
+
+jobs:
+  build_video:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python & FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-liberation curl
+          pip install edge-tts
+
+      - name: Run Video Assembler
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          STORY_PAYLOAD: ${{ toJson(github.event.client_payload) }}
+        run: python3 assemble.py
+
+      - name: Upload Artifact Backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: finished-video
+          path: output_story.mp4
+          retention-days: 5
