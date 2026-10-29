@@ -4,9 +4,13 @@ on:
   repository_dispatch:
     types: [render_story]
 
+permissions:
+  contents: write
+
 jobs:
   build_video:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -15,17 +19,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg fonts-liberation curl
-          pip install edge-tts
+          pip install --upgrade edge-tts
 
       - name: Run Video Assembler
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STORY_PAYLOAD: ${{ toJson(github.event.client_payload) }}
         run: python3 assemble.py
 
       - name: Upload Artifact Backup
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: finished-video
           path: output_story.mp4
           retention-days: 5
+          if-no-files-found: ignore
